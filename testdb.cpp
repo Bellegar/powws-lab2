@@ -14,11 +14,12 @@ int col,row;
     	    	}
     	    	catch(...){ std::cout<< "no connection\n";}
     	    	//std::cout << PQdb(conn);
-    	    	char comm[100] = "select * from table2 where type like '%";
+    	    	string comm = "select * from table2 where type like '%";
                 char* word = "doll";
-    	    	strcat(comm,word);//buf = "doll";////
-    	    	strcat(comm,"%';");
-        		res = PQexec(conn, comm);
+comm += string(word) + "%';";
+    	    	//strcat(comm,word);//buf = "doll";////
+    	    	//strcat(comm,"%';");
+        		res = PQexec(conn, comm.c_str());
         		row = PQntuples(res);
         		col = PQnfields(res);
         		char out[300] ="";

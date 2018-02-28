@@ -20,7 +20,7 @@
 
 #define PORTNUM 3425
 #define BUFSIZE 256
-
+char* askdb(char* word, int tablenum);
 int main(int argc, char** argv)
 {
     int pid,status,len;
@@ -30,9 +30,9 @@ int main(int argc, char** argv)
     //FILE *output;
 
     //struct sockaddr_in dest;
-    PGconn *conn;
-    PGresult *res;
-    int rec_count, row, col;
+    //PGconn *conn;
+    //PGresult *res;
+    //int rec_count, row, col;
 
     struct sockaddr files;
     //int mysocket;
@@ -101,31 +101,8 @@ int main(int argc, char** argv)
     		int sockidW2 = socket(AF_UNIX, SOCK_STREAM, 0);
     		connect(sockidW2, &files, (strlen(files.sa_data) +	sizeof(files.sa_family)));
     		recv(sockidW2, (char*) buf, BUFSIZE,0);
-    		conn = PQconnectdb("dbname=bellegar host=localhost user=bellegar password=bugboom");
-    		char  comm[];
-    		strcpy(buf,"doll");//buf = "doll";////
-    		comm = strcat("select name, price from table1 where name='", strcat(buf,"';"));
-    		res = PQexec(conn, comm);
-    		row =  PQntuples(res);
-    		col = PQnfields(res);
-    		std::cout << PQgetvalue(res,0,0) << "\n";
-    		char* out ="";
-    		for (int icol = 0; icol < col; icol++)
-    		{
-    			strcat(out,PQfname(res,icol));
-    			strcat(out," ");
-    		}
-    		strcat(out,"\n");
-    		for (int irow=0; irow<row; irow++)
-    		{
-    			for (int icol=0; icol < col; icol++)
-    			{
-    				strcat(out, PQgetvalue(res, irow, icol));
-    				strcat(out," ");
-    			}
-    			strcat(out,"\n");
-    		}
-    		send(sockidW2, (char*) out, BUFSIZE,0);
+
+    		send(sockidW2, askdb(buf,2), BUFSIZE,0);
 
     	}
     	else
@@ -137,30 +114,8 @@ int main(int argc, char** argv)
         		int sockidW3 = socket(AF_UNIX, SOCK_STREAM, 0);
         		connect(sockidW3, &files,(strlen(files.sa_data) +	sizeof(files.sa_family)));
         		recv(sockidW3, (char*) buf, BUFSIZE,0);
-        		conn = PQconnectdb("dbname=bellegar host=localhost user=bellegar password=bugboom");
-        		char*  comm;
-        		strcpy(buf,"doll");//buf = "doll";////
-        		comm = strcat("select type, quality from table2 where type='", strcat(buf,"';"));
-        		res = PQexec(conn, comm);
-        		row =  PQntuples(res);
-        		col = PQnfields(res);
-        		char* out ="";
-        		for (int icol = 0; icol < col; icol++)
-        		{
-        			strcat(out,PQfname(res,icol));
-        			strcat(out," ");
-        		}
-        		strcat(out,"\n");
-        		for (int irow=0; irow<row; irow++)
-        		{
-        			for (int icol=0; icol < col; icol++)
-        			{
-        				strcat(out, PQgetvalue(res, irow, icol));
-        				strcat(out," ");
-        			}
-        			strcat(out,"\n");
-        		}
-        		send(sockidW3, (char*) out, BUFSIZE,0);
+
+        		send(sockidW3, askdb(buf,3), BUFSIZE,0);
     		}
     		else
     		{
@@ -169,34 +124,8 @@ int main(int argc, char** argv)
     	    	int sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
     	    	connect(sockidW1, &files, (strlen(files.sa_data) +	sizeof(files.sa_family)));
     	    	recv(sockidW1, (char*) buf, BUFSIZE,0);
-    	    	try {
-    	    	conn = PQconnectdb("dbname=bellegar host=localhost user=bellegar password=bugboom");
-    	    	}
-    	    	catch(...){ std::cout<< "no connection\n";}
-    	    	//std::cout << PQdb(conn);
-    	    	char*  comm;
-    	    	strcpy(buf,"doll");//buf = "doll";////
-    	    	comm = strcat("select book, pgcount from table3 where book='", strcat(buf,"';"));
-        		res = PQexec(conn, comm);
-        		row =  PQntuples(res);
-        		col = PQnfields(res);
-        		char* out ="";
-        		for (int icol = 0; icol < col; icol++)
-        		{
-        			strcat(out,PQfname(res,icol));
-        			strcat(out," ");
-        		}
-        		strcat(out,"\n");
-        		for (int irow=0; irow<row; irow++)
-        		{
-        			for (int icol=0; icol < col; icol++)
-        			{
-        				strcat(out, PQgetvalue(res, irow, icol));
-        				strcat(out," ");
-        			}
-        			strcat(out,"\n");
-        		}
-        		send(sockidW1, (char*) out, BUFSIZE,0);
+
+        		send(sockidW1, askdb(buf,1), BUFSIZE,0);
     		}
     	}
     }
@@ -205,23 +134,35 @@ int main(int argc, char** argv)
     return 0;
 }
 
-char* askdb(char* word, char* tablename)
+char* askdb(char* word, int tablenum)
 {
+		PGconn *conn;
+	    PGresult *res;
 		char out[300] ="";
+		int col, row;
     	conn = PQconnectdb("dbname=bellegar host=localhost user=bellegar password=bugboom");
     	if (conn == NULL)
     	{
-    		out = "no connection to bellegar DB\n";
-    		return &out;
+    		strcpy(out, "no connection to bellegar DB\n");
+    		return out;
     	}
     	//std::cout << PQdb(conn);
-    	char comm[100] = "select * from ";
-    	strcat(out, table2);
-    	strcat(out," where type like '%");
-        //char word[50] = "doll";
-    	strcat(comm,word);//buf = "doll";////
-    	rcat(comm,"%';");
-    	res = PQexec(conn, comm);
+    	string namecol;
+    	switch (tablenum)
+    	{
+    	case 1:
+    		namecol = "name";
+    		break;
+    	case 2:
+    		namecol = "type";
+    		break;
+    	case 3:
+    		namecol = "book";
+    		break;
+    	}
+    	string comm = "select * from table" + itoa(tablenum) + " where " + string(namecol)
+    			+ " like '%" + string(word) + "%';";
+    	res = PQexec(conn, comm.c_str());
     	row = PQntuples(res);
     	col = PQnfields(res);
 
