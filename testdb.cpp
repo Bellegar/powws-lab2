@@ -14,14 +14,14 @@ int col,row;
     	    	}
     	    	catch(...){ std::cout<< "no connection\n";}
     	    	//std::cout << PQdb(conn);
-    	    	char* comm = "select book, pgcount from table3 where book='";
-                char* word = "doll";
+    	    	char comm[100] = "select book, pgcount from table3 where book='";
+                char word[50] = "doll";
     	    	strcat(comm,word);//buf = "doll";////
     	    	strcat(comm,"';");
         		res = PQexec(conn, comm);
         		row = PQntuples(res);
         		col = PQnfields(res);
-        		char* out ="";
+        		char out[200] ="";
         		for (int icol = 0; icol < col; icol++)
         		{
         			strcat(out,PQfname(res,icol));
@@ -38,6 +38,7 @@ int col,row;
         			strcat(out,"\n");
         		}
             cout << out;
-            cin >> row;
+            getchar();
+            //cin >> row;
         return 0;
 }
