@@ -102,7 +102,7 @@ int main(int argc, char** argv)
     		connect(sockidW2, &files, (strlen(files.sa_data) +	sizeof(files.sa_family)));
     		recv(sockidW2, (char*) buf, BUFSIZE,0);
     		conn = PQconnectdb("dbname=bellegar host=localhost user=bellegar password=bugboom");
-    		char*  comm;
+    		char  comm[];
     		strcpy(buf,"doll");//buf = "doll";////
     		comm = strcat("select name, price from table1 where name='", strcat(buf,"';"));
     		res = PQexec(conn, comm);
@@ -200,42 +200,44 @@ int main(int argc, char** argv)
     		}
     	}
     }
-    /*int fp=open(fname,O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IXUSR);
-
-    while ((len=recv(consocket, buf, sizeof(buf), 0))==sizeof(buf))
-    {
-        if (strcmp(buf,"End")==0)break;
-        write(fp,buf,len);
-    }
-    write(fp,buf,len);
-    close(fp);
-
-    pipe(chan);*/
-/*
-    if(pid=fork())
-    {
-        close(chan[1]);
-        wait(&status);
-
-        output = fdopen(chan[0], "r");
-        printf("Data from %s:\n",fname);
-        while (fgets(buf, sizeof (buf), output))
-        {
-            send(consocket,buf,sizeof (buf),0);
-            printf("%s", buf);
-        }
-        send(consocket,"End",3,0);
-    }
-    else
-    {
-        close(chan[0]);
-        close(chan[1]);
-        if (execl(fname, fname, NULL) == -1) perror("execl");
-        exit(1);
-    }
-    shutdown(consocket,1);
-    shutdown(mysocket,1);*/
     std::cout << "vvedi chtoto";
     std::cin >> row;;
     return 0;
+}
+
+char* askdb(char* word, char* tablename)
+{
+		char out[300] ="";
+    	conn = PQconnectdb("dbname=bellegar host=localhost user=bellegar password=bugboom");
+    	if (conn == NULL)
+    	{
+    		out = "no connection to bellegar DB\n";
+    		return &out;
+    	}
+    	//std::cout << PQdb(conn);
+    	char comm[100] = "select * from ";
+    	strcat(out, table2);
+    	strcat(out," where type like '%");
+        //char word[50] = "doll";
+    	strcat(comm,word);//buf = "doll";////
+    	rcat(comm,"%';");
+    	res = PQexec(conn, comm);
+    	row = PQntuples(res);
+    	col = PQnfields(res);
+
+	for (int icol = 0; icol < col; icol++)
+	{
+			strcat(out,PQfname(res,icol));
+			strcat(out,"\t");
+	}
+	strcat(out,"\n");
+	for (int irow=0; irow<row; irow++)
+	{
+		for (int icol=0; icol < col; icol++)
+		{
+			strcat(out, PQgetvalue(res, irow, icol));
+			strcat(out,"\t");
+		}
+	strcat(out,"\n");
+	}
 }

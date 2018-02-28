@@ -14,26 +14,26 @@ int col,row;
     	    	}
     	    	catch(...){ std::cout<< "no connection\n";}
     	    	//std::cout << PQdb(conn);
-    	    	char comm[100] = "select book, pgcount from table3 where book='";
-                char word[50] = "doll";
+    	    	char comm[100] = "select * from table2 where type like '%";
+                char* word = "doll";
     	    	strcat(comm,word);//buf = "doll";////
-    	    	strcat(comm,"';");
+    	    	strcat(comm,"%';");
         		res = PQexec(conn, comm);
         		row = PQntuples(res);
         		col = PQnfields(res);
-        		char out[200] ="";
+        		char out[300] ="";
         		for (int icol = 0; icol < col; icol++)
         		{
         			strcat(out,PQfname(res,icol));
-        			strcat(out," ");
+        			strcat(out,"\t");
         		}
         		strcat(out,"\n");
-        		for (int irow=0; irow<row; irow++)
+        		for (int irow=0; irow <  row; irow++)
         		{
         			for (int icol=0; icol < col; icol++)
         			{
         				strcat(out, PQgetvalue(res, irow, icol));
-        				strcat(out," ");
+        				strcat(out,"\t");
         			}
         			strcat(out,"\n");
         		}
