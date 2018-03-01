@@ -1,0 +1,1 @@
+askdbfunc.d: ../askdbfunc.cpp

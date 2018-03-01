@@ -4,15 +4,21 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
+../askdbfunc.cpp \
 ../server.cpp \
+../test2db.cpp \
 ../testdb.cpp 
 
 OBJS += \
+./askdbfunc.o \
 ./server.o \
+./test2db.o \
 ./testdb.o 
 
 CPP_DEPS += \
+./askdbfunc.d \
 ./server.d \
+./test2db.d \
 ./testdb.d 
 
 

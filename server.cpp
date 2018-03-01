@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+//#include <sys/un.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <postgresql/libpq-fe.h>
@@ -27,27 +28,34 @@ int main(int argc, char** argv)
     //char buf[BUFSIZE];
     struct sockaddr files;
     files.sa_family = AF_UNIX;
-    strcpy(files.sa_data, "socket.soc");
+    //strcpy(files.sa_data, "socket.soc");
+    unlink("socket.soc");
     printf("First Worker init\n");
     if (!(pid = fork()))
     {
     	char buf[BUFSIZE];
     	struct sockaddr_in serv;
     	serv.sin_family = AF_INET;
+
     	serv.sin_addr.s_addr = htonl(INADDR_ANY); //all IPs of PC
     	serv.sin_port = htons(PORTNUM);
     	printf("Server\n");
+    	//struct sockaddr files;
+    	//files.sa_family = AF_UNIX;
+    	strcpy(files.sa_data, "socket1.soc");
     	//connection with Worker1
     	int sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
     	bind(sockidW1, &files, (strlen(files.sa_data) +	sizeof(files.sa_family)));
     	listen(sockidW1, 1);
     	int chanW1 = accept(sockidW1, NULL, NULL);
     	//connection with Worker2
+    	strcpy(files.sa_data, "socket2.soc");
     	int sockidW2 = socket(AF_UNIX, SOCK_STREAM, 0);
        	bind(sockidW2, &files, (strlen(files.sa_data) +	sizeof(files.sa_family)));
        	listen(sockidW2, 1);
        	int chanW2 = accept(sockidW2, NULL, NULL);
        	//connection with Worker3
+       	strcpy(files.sa_data, "socket3.soc");
        	int sockidW3 = socket(AF_UNIX, SOCK_STREAM, 0);
         bind(sockidW3, &files, (strlen(files.sa_data) +	sizeof(files.sa_family)));
       	listen(sockidW3, 1);
@@ -61,22 +69,25 @@ int main(int argc, char** argv)
         //!recv(chanC, (char*) buf, BUFSIZE, 0);
         strcpy(buf,"dol");//
     	//printf("Waiting for connection...\n");
-    	send(chanW1, (char*)buf, BUFSIZE, 0);
-    	send(chanW2, (char*)buf, BUFSIZE, 0);
-    	send(chanW3, (char*)buf, BUFSIZE, 0);
+    	write(chanW1, (char*)buf, BUFSIZE);
+    	write(chanW2, (char*)buf, BUFSIZE);
+    	write(chanW3, (char*)buf, BUFSIZE);
     	char bufout[BUFSIZE*3] = "";
     	strcpy(buf,"");//
-    	recv(chanW1, (char*) buf, BUFSIZE, 0);
+    	read(chanW1, (char*) buf, BUFSIZE);
     	strcat(bufout,buf);
-    	recv(chanW2, (char*) buf, BUFSIZE, 0);
+    	read(chanW2, (char*) buf, BUFSIZE);
     	strcat(bufout,buf);
-    	recv(chanW3, (char*) buf, BUFSIZE, 0);
+    	read(chanW3, (char*) buf, BUFSIZE);
     	strcat(bufout,buf);
     	std::cout << "I am server, your info:\n" << bufout<< "\n";
     	//!send(chanC, (char*)bufout, BUFSIZE*3, 0);
     	close(chanW1);
+    	unlink("socket1.soc");
     	close(chanW2);
+    	unlink("socket2.soc");
     	close(chanW3);
+    	unlink("socket3.soc");
     	//!close(chanC);
     	kill(getpid(), SIGTERM);
     }
@@ -87,12 +98,12 @@ int main(int argc, char** argv)
     		char buf[BUFSIZE];
     		//strcpy(files.sa_data, "socket.soc");
     		printf("Worker2 init and searching\n");
+    		strcpy(files.sa_data, "socket2.soc");
     		int sockidW2 = socket(AF_UNIX, SOCK_STREAM, 0);
     		connect(sockidW2, &files, (strlen(files.sa_data) +	sizeof(files.sa_family)));
-    		recv(sockidW2, (char*) buf, BUFSIZE,0);
+    		read(sockidW2, (char*) buf, BUFSIZE);
     		std::cout<<"w2 buf="<<buf<<"\n";
-    		getchar();
-    		send(sockidW2, askdb(buf,2), BUFSIZE,0);
+    		write(sockidW2, askdb(buf,2), BUFSIZE);
     		std::cout<<"w2ask\n"<<askdb(buf,2)<<"\n";
     		kill(getpid(), SIGTERM);
     	}
@@ -103,11 +114,12 @@ int main(int argc, char** argv)
     			char buf[BUFSIZE];
     			//strcpy(files.sa_data, "socket.soc");
         		printf("Worker3 init and searching\n");
+        		strcpy(files.sa_data, "socket3.soc");
         		int sockidW3 = socket(AF_UNIX, SOCK_STREAM, 0);
         		connect(sockidW3, &files,(strlen(files.sa_data) +	sizeof(files.sa_family)));
-        		recv(sockidW3, (char*) buf, BUFSIZE,0);
+        		read(sockidW3, (char*) buf, BUFSIZE);
 
-        		send(sockidW3, askdb(buf,3), BUFSIZE,0);
+        		write(sockidW3, askdb(buf,3), BUFSIZE);
         		kill(getpid(), SIGTERM);
     		}
     		else
@@ -115,11 +127,12 @@ int main(int argc, char** argv)
     			char buf[BUFSIZE];
     			//strcpy(files.sa_data, "socket.soc");
     	    	printf("Worker1 is searching\n");
+    	    	strcpy(files.sa_data, "socket1.soc");
     	    	int sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
     	    	connect(sockidW1, &files, (strlen(files.sa_data) +	sizeof(files.sa_family)));
-    	    	recv(sockidW1, (char*) buf, BUFSIZE,0);
+    	    	read(sockidW1, (char*) buf, BUFSIZE);
 
-        		send(sockidW1, askdb(buf,1), BUFSIZE,0);
+        		write(sockidW1, askdb(buf,1), BUFSIZE);
     		}
     	}
     }
