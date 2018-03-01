@@ -1,0 +1,1 @@
+testdb.d: ../testdb.cpp

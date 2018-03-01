@@ -9,7 +9,7 @@ char* askdb(char* word, int tablenum)
 {
 		PGconn *conn;
 	    PGresult *res;
-		char out[300] ="";
+		char out[300]="";
 		int col, row;
     	conn = PQconnectdb("dbname=bellegar host=localhost user=bellegar password=bugboom");
     	if (conn == NULL)
@@ -61,6 +61,7 @@ char* askdb(char* word, int tablenum)
 		}
 	strcat(out,"\n");
 	}
-cout << out;
+return out;
+//cout << out;
 }
 #endif
