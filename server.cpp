@@ -25,8 +25,9 @@
 char* askdb(char* word, int tablenum);
 int main(int argc, char** argv)
 {
-	int pid, status, len;
+	int pid, status, len, rer;
 	char buf[BUFSIZE];
+	std::string bufstr;
 	struct sockaddr files;
 	files.sa_family = AF_UNIX;
 	int sem_id, sem_id2;
@@ -45,8 +46,8 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	unlink("socket.soc");
-	printf("First Worker init\n");
+	//unlink("socket.soc");
+	//printf("First Worker init\n");
 
 	if (!(pid = fork()))
 	{
@@ -62,24 +63,61 @@ int main(int argc, char** argv)
 		strcpy(files.sa_data, "socket1.soc");
 		//connection with Worker1
 		int sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
-		bind(sockidW1, &files,
-				(strlen(files.sa_data) + sizeof(files.sa_family)));
-		listen(sockidW1, 1);
-		int chanW1 = accept(sockidW1, NULL, NULL);
+		int SAsize = strlen(files.sa_data) + sizeof(files.sa_family);
+		if (!bind(sockidW1, &files, SAsize))
+		{
+			std::cout << "bind1 error\n";
+			return 1;
+		}
+		if (!listen(sockidW1, 3))
+		{
+			std::cout << "listen1 error\n";
+			return 1;
+		}
+		int chanW1 = accept(sockidW1, &files, (socklen_t*) &SAsize);
+		if (!chanW1)
+		{
+			std::cout << "accept1 error\n";
+			return 1;
+		}
 		//connection with Worker2
 		strcpy(files.sa_data, "socket2.soc");
 		int sockidW2 = socket(AF_UNIX, SOCK_STREAM, 0);
-		bind(sockidW2, &files,
-				(strlen(files.sa_data) + sizeof(files.sa_family)));
-		listen(sockidW2, 1);
-		int chanW2 = accept(sockidW2, NULL, NULL);
+		if (!bind(sockidW2, &files, SAsize))
+		{
+			std::cout << "bind2 error\n";
+			return 1;
+		}
+		if (!listen(sockidW2, 3))
+		{
+			std::cout << "listen2 error\n";
+			return 1;
+		}
+		int chanW2 = accept(sockidW2, &files, (socklen_t*) &SAsize);
+		if (!chanW2)
+		{
+			std::cout << "accept2 error\n";
+			return 1;
+		}
 		//connection with Worker3
 		strcpy(files.sa_data, "socket3.soc");
 		int sockidW3 = socket(AF_UNIX, SOCK_STREAM, 0);
-		bind(sockidW3, &files,
-				(strlen(files.sa_data) + sizeof(files.sa_family)));
-		listen(sockidW3, 1);
-		int chanW3 = accept(sockidW3, NULL, NULL);
+		if (!bind(sockidW3, &files, SAsize))
+		{
+			std::cout << "bind3 error\n";
+			return 1;
+		}
+		if (!listen(sockidW3, 3))
+		{
+			std::cout << "listen3 error\n";
+			return 1;
+		}
+		int chanW3 = accept(sockidW3, &files, (socklen_t*) &SAsize);
+		if (!chanW3)
+		{
+			std::cout << "accept3 error\n";
+			return 1;
+		}
 		//connection with Client
 		//!serv.sin_family = AF_INET;
 		//!int sockidC = socket(AF_INET, SOCK_STREAM, 0);
@@ -88,17 +126,29 @@ int main(int argc, char** argv)
 		//!int chanC = accept(sockidC, NULL, NULL);
 		//!recv(chanC, (char*) buf, BUFSIZE, 0);
 		strcpy(buf, "dol");        //
+		bufstr = "dol";
 		//printf("Waiting for connection...\n");
-		write(chanW1, (char*) buf, BUFSIZE);
-		write(chanW2, (char*) buf, BUFSIZE);
-		write(chanW3, (char*) buf, BUFSIZE);
+		if (!send(chanW1, bufstr.c_str(), BUFSIZE, 0))
+		{
+			std::cout << "send1 error\n";
+			return 1;
+		}
+		send(chanW2, bufstr.c_str(), BUFSIZE, 0);
+		send(chanW3, bufstr.c_str(), BUFSIZE, 0);
 		char bufout[BUFSIZE * 3] = "";
 		strcpy(buf, "");    	//
-		read(chanW1, (char*) buf, BUFSIZE);
+		if (!recv(chanW1, (char*) buf, BUFSIZE, 0))
+		{
+			std::cout << "recv1 error \n";
+			return 1;
+		}
+		std::cout << "W1 se " << buf << "\n";
 		strcat(bufout, buf);
-		read(chanW2, (char*) buf, BUFSIZE);
+		recv(chanW2, (char*) buf, BUFSIZE, 0);
+		std::cout << "W2 se " << buf << "\n";
 		strcat(bufout, buf);
-		read(chanW3, (char*) buf, BUFSIZE);
+		recv(chanW3, (char*) buf, BUFSIZE, 0);
+		std::cout << "W3 se " << buf << "\n";
 		strcat(bufout, buf);
 
 		//!close(chanC);
@@ -119,9 +169,9 @@ int main(int argc, char** argv)
 	}
 
 	/*SB.sem_num = 0;
-	SB.sem_op = 1;
-	SB.sem_flg = 0;
-	semop(sem_id, &SB, 1);*/
+	 SB.sem_op = 1;
+	 SB.sem_flg = 0;
+	 semop(sem_id, &SB, 1);*/
 
 	if (!(pid = fork()))
 	{
@@ -138,9 +188,9 @@ int main(int argc, char** argv)
 		int sockidW2 = socket(AF_UNIX, SOCK_STREAM, 0);
 		connect(sockidW2, &files,
 				(strlen(files.sa_data) + sizeof(files.sa_family)));
-		read(sockidW2, (char*) buf, BUFSIZE);
+		recv(sockidW2, (char*) buf, BUFSIZE, 0);
 		std::cout << "w2 buf=" << buf << "\n";
-		write(sockidW2, askdb(buf, 2), BUFSIZE);
+		send(sockidW2, askdb(buf, 2), BUFSIZE, 0);
 		/*dbout = askdb(argv[1], 2);
 		 semop(sem_id, &SB, 1);
 		 printf("Worker2\n");
@@ -174,9 +224,9 @@ int main(int argc, char** argv)
 		int sockidW3 = socket(AF_UNIX, SOCK_STREAM, 0);
 		connect(sockidW3, &files,
 				(strlen(files.sa_data) + sizeof(files.sa_family)));
-		read(sockidW3, (char*) buf, BUFSIZE);
+		recv(sockidW3, (char*) buf, BUFSIZE, 0);
 
-		write(sockidW3, askdb(buf, 3), BUFSIZE);
+		send(sockidW3, askdb(buf, 3), BUFSIZE, 0);
 
 		/*dbout = askdb(argv[1], 3);
 		 semop(sem_id, &SB, 1);
@@ -209,9 +259,9 @@ int main(int argc, char** argv)
 	int sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
 	connect(sockidW1, &files,
 			(strlen(files.sa_data) + sizeof(files.sa_family)));
-	read(sockidW1, (char*) buf, BUFSIZE);
+	recv(sockidW1, (char*) buf, BUFSIZE, 0);
 
-	write(sockidW1, askdb(buf, 1), BUFSIZE);
+	send(sockidW1, askdb(buf, 1), BUFSIZE, 0);
 
 	/*dbout = askdb(argv[1], 1);
 	 semop(sem_id, &SB, 1);
