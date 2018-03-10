@@ -44,7 +44,7 @@ char* askdb(char* word, int tablenum)
    
     if (row !=0)
 {
- cout<<"table"<<tablenum<<":\n";
+ //cout<<"table"<<tablenum<<":\n";
 	for (int icol = 0; icol < col; icol++)
 	{
 			strcat(out,PQfname(res,icol));

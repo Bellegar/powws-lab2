@@ -6,18 +6,24 @@
 CPP_SRCS += \
 ../askdbfunc.cpp \
 ../server.cpp \
+../t.cpp \
 ../test2db.cpp \
 ../testdb.cpp 
+
+O_SRCS += \
+../askdbfunc.o 
 
 OBJS += \
 ./askdbfunc.o \
 ./server.o \
+./t.o \
 ./test2db.o \
 ./testdb.o 
 
 CPP_DEPS += \
 ./askdbfunc.d \
 ./server.d \
+./t.d \
 ./test2db.d \
 ./testdb.d 
 
