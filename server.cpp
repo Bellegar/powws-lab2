@@ -26,6 +26,11 @@
 void askdb(char* word, int tablenum, char* output);
 int main(int argc, char** argv)
 {
+	if (argc < 2)
+	{
+		std::cout << "need IP adress as argument\n";
+		return 1;
+	}
 	int pid, status, len, rer;
 	char buf[BUFSIZE];
 	std::string bufstr;
@@ -56,15 +61,24 @@ int main(int argc, char** argv)
 	if (!(pid = fork()))
 	{
 		struct sockaddr_in serv;
+		int sockINT, intcon;
+		printf("Server starts\n");
 		serv.sin_family = AF_INET;
 		serv.sin_addr.s_addr = htonl(INADDR_ANY ); //all IPs of PC
 		serv.sin_port = htons(PORTNUM);
-		printf("Server starts\n");
+		sockINT = socket(AF_INET, SOCK_STREAM, 0);
+		//inet_aton(argv[1], serv.sin_addr);
+		bind(sockINT, (sockaddr*) &serv, sizeof(serv));
+		listen(sockINT, 2);
+		intcon = accept(sockINT, NULL, NULL);
+		recv(intcon, buf, BUFSIZE, 0);
+		std::cout << "from client " << buf << "\n";
+
 		unlink("server_socket");
 		unlink("server_socket2");
 		unlink("server_socket3");
 		sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
-		strcpy(buf, "dol");
+		//strcpy(buf, "dol");
 		files.sun_family = AF_UNIX;
 		strcpy(files.sun_path, "server_socket");
 		SAsize = sizeof(files);
@@ -96,7 +110,6 @@ int main(int argc, char** argv)
 			return 1;
 		}
 
-
 		//==================connection with Worker2
 		strcpy(files.sun_path, "server_socket2");
 		SAsize = sizeof(files);
@@ -125,7 +138,6 @@ int main(int argc, char** argv)
 		}
 		send(chanW2, buf, sizeof(buf), 0);
 
-
 		//================connection with Worker3
 		strcpy(files.sun_path, "server_socket3");
 		SAsize = sizeof(files);
@@ -141,7 +153,6 @@ int main(int argc, char** argv)
 			return 1;
 		}
 
-
 		SB.sem_num = 0;
 		SB.sem_op = 4;
 		SB.sem_flg = 0;
@@ -155,7 +166,6 @@ int main(int argc, char** argv)
 			return 1;
 		}
 		send(chanW3, buf, sizeof(buf), 0);
-
 
 		//=================Receiving results
 		char bufout[BUFSIZE * 3] = "";
@@ -190,10 +200,12 @@ int main(int argc, char** argv)
 		SB.sem_op = -3;
 		SB.sem_flg = 0;
 		semop(sem_id, &SB, 1);
+		send(intcon, bufout, BUFSIZE * 3, 0);
 		std::cout << "I am server, your info:\n" << bufout << "\n";
 		close(sockidW1);
 		close(sockidW2);
 		close(sockidW2);
+		close(intcon);
 		exit(0);
 	}
 
@@ -205,11 +217,12 @@ int main(int argc, char** argv)
 		clfiles.sun_family = AF_UNIX;
 		strcpy(clfiles.sun_path, "server_socket2");
 		CLsize = sizeof(clfiles);
-		printf("Worker2 starts searching\n");
+
 		SB.sem_num = 0;
 		SB.sem_op = -2;
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
+		printf("Worker2 starts searching\n");
 		//std::cout << "W2 -2 " << semctl(sem_id2, 0, GETVAL) << "\n";
 		sockidW2 = socket(AF_UNIX, SOCK_STREAM, 0);
 		rer = connect(sockidW2, (sockaddr*) &clfiles, CLsize);
@@ -241,11 +254,12 @@ int main(int argc, char** argv)
 		clfiles.sun_family = AF_UNIX;
 		strcpy(clfiles.sun_path, "server_socket3");
 		CLsize = sizeof(clfiles);
-		printf("Worker3 starts searching\n");
+
 		SB.sem_num = 0;
 		SB.sem_op = -4;
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
+		printf("Worker3 starts searching\n");
 		//std::cout << "W3 -4 " << semctl(sem_id2, 0, GETVAL) << "\n";
 		sockidW3 = socket(AF_UNIX, SOCK_STREAM, 0);
 		rer = connect(sockidW3, (sockaddr*) &clfiles, CLsize);
@@ -273,12 +287,13 @@ int main(int argc, char** argv)
 	clfiles.sun_family = AF_UNIX;
 	strcpy(clfiles.sun_path, "server_socket");
 	CLsize = sizeof(clfiles);
-	printf("Worker1 starts searching\n");
+
 	//strcpy(files.sa_data, "socket1.soc");
 	SB.sem_num = 0;
 	SB.sem_op = -1;
 	SB.sem_flg = 0;
 	semop(sem_id2, &SB, 1);
+	printf("Worker1 starts searching\n");
 	//std::cout << "W1 -1 " << semctl(sem_id2, 0, GETVAL) << "\n";
 	sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
 	rer = connect(sockidW1, (sockaddr*) &clfiles, CLsize);
