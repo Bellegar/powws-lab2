@@ -32,10 +32,22 @@ int main(int argc, char** argv)
 	cli.sin_family = AF_INET;
 	cli.sin_port = htons(PORTNUM);
 	inet_aton(argv[1], &cli.sin_addr);
-	connect(sockid, (sockaddr*)&cli, sizeof(cli));
+	if (connect(sockid, (sockaddr*) &cli, sizeof(cli)) < 0)
+	{
+		std::cout << "connect error\n";
+		return 1;
+	}
 
-	send(sockid, argv[2], BUFSIZE, 0);
-	recv(sockid, result, BUFSIZE * 3, 0);
+	if (send(sockid, argv[2], BUFSIZE, 0) < 0)
+	{
+		std::cout << "send error\n";
+		return 1;
+	}
+	if (recv(sockid, result, BUFSIZE * 3, 0) < 0)
+	{
+		std::cout << "recv error\n";
+		return 1;
+	}
 	std::cout << "Searching result:\n" << result << "\n";
 	close(sockid);
 	return 0;

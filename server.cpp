@@ -26,11 +26,11 @@
 void askdb(char* word, int tablenum, char* output);
 int main(int argc, char** argv)
 {
-	if (argc < 2)
-	{
-		std::cout << "need IP adress as argument\n";
-		return 1;
-	}
+	/*if (argc < 2)
+	 {
+	 std::cout << "need IP adress as argument\n";
+	 return 1;
+	 }*/
 	int pid, status, len, rer;
 	char buf[BUFSIZE];
 	std::string bufstr;
@@ -67,12 +67,33 @@ int main(int argc, char** argv)
 		serv.sin_addr.s_addr = htonl(INADDR_ANY ); //all IPs of PC
 		serv.sin_port = htons(PORTNUM);
 		sockINT = socket(AF_INET, SOCK_STREAM, 0);
+		int enable = 1;
+		if (setsockopt(sockINT, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+		{
+		    std::cout<<"setsockopt(SO_REUSEADDR) failed\n";
+		    return 1;
+		}
 		//inet_aton(argv[1], serv.sin_addr);
-		bind(sockINT, (sockaddr*) &serv, sizeof(serv));
-		listen(sockINT, 2);
+		if (bind(sockINT, (sockaddr*) &serv, sizeof(serv)) < 0)
+		{
+			std::cout << "interbind error\n";
+			return 1;
+		}
+		if (listen(sockINT, 2) <0)
+		{
+			std::cout << "interlisten error\n";
+			return 1;
+		}
+
+
 		intcon = accept(sockINT, NULL, NULL);
+		if (intcon < 0)
+		{
+			std::cout << "interaccept error\n";
+			return 1;
+		}
 		recv(intcon, buf, BUFSIZE, 0);
-		std::cout << "from client " << buf << "\n";
+		std::cout << "from client: " << buf << "\n";
 
 		unlink("server_socket");
 		unlink("server_socket2");
@@ -96,9 +117,9 @@ int main(int argc, char** argv)
 		SB.sem_op = 1;
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
+
 		//std::cout << "Serv +1 " << semctl(sem_id2, 0, GETVAL) << "\n";
-		int chanW1 = accept(sockidW1, (sockaddr*) &clfiles,
-				(socklen_t*) &CLsize);
+		int chanW1 = accept(sockidW1, NULL,NULL);
 		if (chanW1 < 0)
 		{
 			std::cout << "accept1 error\n";
@@ -129,8 +150,7 @@ int main(int argc, char** argv)
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
 		//std::cout << "Serv +2 " << semctl(sem_id2, 0, GETVAL) << "\n";
-		int chanW2 = accept(sockidW2, (sockaddr*) &clfiles,
-				(socklen_t*) &CLsize);
+		int chanW2 = accept(sockidW2, NULL, NULL);
 		if (chanW2 < 0)
 		{
 			std::cout << "accept2 error\n";
@@ -158,8 +178,7 @@ int main(int argc, char** argv)
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
 		//std::cout << "Serv +4 " << semctl(sem_id2, 0, GETVAL) << "\n";
-		int chanW3 = accept(sockidW3, (sockaddr*) &clfiles,
-				(socklen_t*) &CLsize);
+		int chanW3 = accept(sockidW3, NULL, NULL);
 		if (chanW3 < 0)
 		{
 			std::cout << "accept3 error\n";
@@ -293,6 +312,7 @@ int main(int argc, char** argv)
 	SB.sem_op = -1;
 	SB.sem_flg = 0;
 	semop(sem_id2, &SB, 1);
+
 	printf("Worker1 starts searching\n");
 	//std::cout << "W1 -1 " << semctl(sem_id2, 0, GETVAL) << "\n";
 	sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
