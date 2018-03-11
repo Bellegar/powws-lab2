@@ -1,0 +1,1 @@
+testsock.d: ../testsock.cpp

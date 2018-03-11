@@ -8,7 +8,8 @@ CPP_SRCS += \
 ../server.cpp \
 ../t.cpp \
 ../test2db.cpp \
-../testdb.cpp 
+../testdb.cpp \
+../testsock.cpp 
 
 O_SRCS += \
 ../askdbfunc.o 
@@ -18,14 +19,16 @@ OBJS += \
 ./server.o \
 ./t.o \
 ./test2db.o \
-./testdb.o 
+./testdb.o \
+./testsock.o 
 
 CPP_DEPS += \
 ./askdbfunc.d \
 ./server.d \
 ./t.d \
 ./test2db.d \
-./testdb.d 
+./testdb.d \
+./testsock.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
