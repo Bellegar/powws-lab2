@@ -1,3 +1,4 @@
+//***Function of searching in db Bellegar data fields with incoming word with searching in tabl1,2,3
 #ifndef ASKDB
 #define ASKDB
 #include <postgresql/libpq-fe.h>
@@ -18,7 +19,6 @@ char* askdb(char* word, int tablenum)
 		strcpy(out, "no connection to bellegar DB\n");
 		return out;
 	}
-	//std::cout << PQdb(conn);
 	string namecol;
 	switch (tablenum)
 	{
@@ -32,21 +32,15 @@ char* askdb(char* word, int tablenum)
 		namecol = "book";
 		break;
 	}
-	//char* numch;
-	//sprintf(numch,"%d",tablenum);
 	string comm = "select * from table";
 	comm += char(tablenum + (int) '0');
 	comm = comm + " where " + string(namecol) + " like '%" + string(word)
 			+ "%';";
-	//cout << tablenum<< ' '<< comm << "\n";
 	res = PQexec(conn, comm.c_str());
 	row = PQntuples(res);
 	col = PQnfields(res);
-	//cout << row<<' ' << col <<"\n";
-
 	if (row != 0)
 	{
-		//cout<<"table"<<tablenum<<":\n";
 		for (int icol = 0; icol < col; icol++)
 		{
 			strcat(out, PQfname(res, icol));
@@ -64,7 +58,6 @@ char* askdb(char* word, int tablenum)
 		strcat(out, "\n");
 	}
 	return out;
-//cout << out;
 }
 
 void askdb(char* word, int tablenum, char* output)
@@ -80,9 +73,7 @@ void askdb(char* word, int tablenum, char* output)
 		strcpy(out, "no connection to bellegar DB\n");
 		strcpy(output, out);
 		return;
-		//*output = out;
 	}
-	//std::cout << PQdb(conn);
 	string namecol;
 	switch (tablenum)
 	{
@@ -96,21 +87,15 @@ void askdb(char* word, int tablenum, char* output)
 		namecol = "book";
 		break;
 	}
-	//char* numch;
-	//sprintf(numch,"%d",tablenum);
 	string comm = "select * from table";
 	comm += char(tablenum + (int) '0');
 	comm = comm + " where " + string(namecol) + " like '%" + string(word)
 			+ "%';";
-	//cout << tablenum<< ' '<< comm << "\n";
 	res = PQexec(conn, comm.c_str());
 	row = PQntuples(res);
 	col = PQnfields(res);
-	//cout << row<<' ' << col <<"\n";
-
 	if (row != 0)
 	{
-		//cout<<"table"<<tablenum<<":\n";
 		for (int icol = 0; icol < col; icol++)
 		{
 			strcat(out, PQfname(res, icol));
@@ -129,7 +114,5 @@ void askdb(char* word, int tablenum, char* output)
 	}
 	strcpy(output, out);
 	return;
-//return out;
-//cout << out;
 }
 #endif

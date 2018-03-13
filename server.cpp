@@ -4,6 +4,7 @@
  *  Created on: 28.02.2018
  *      Author: bellegar
  */
+ //***Server for searching data in certain tables in db by keyword from client
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,7 +19,6 @@
 #include <sys/stat.h>
 #include <netinet/in.h>
 #include <fcntl.h>
-//#include <postgresql/libpq-fe.h>
 #include <iostream>
 
 #define PORTNUM 3425
@@ -26,26 +26,19 @@
 void askdb(char* word, int tablenum, char* output);
 int main(int argc, char** argv)
 {
-	/*if (argc < 2)
-	 {
-	 std::cout << "need IP adress as argument\n";
-	 return 1;
-	 }*/
+	//first Worker is parent
 	int pid, status, len, rer;
 	char buf[BUFSIZE];
 	std::string bufstr;
-	//struct sockaddr files;
 	int sockidW1, sockidW2, sockidW3;
 	int SAsize, CLsize;
 	sockaddr_un files;
 	sockaddr_un clfiles;
 	files.sun_family = AF_UNIX;
-
 	int sem_id, sem_id2;
-	//string dbout;
 	struct sembuf SB;
-	sem_id = semget(IPC_PRIVATE, 1, 0777 | IPC_CREAT);
-	sem_id2 = semget(IPC_PRIVATE, 1, 0777 | IPC_CREAT);
+	sem_id = semget(IPC_PRIVATE, 1, 0666 | IPC_CREAT);
+	sem_id2 = semget(IPC_PRIVATE, 1, 0666 | IPC_CREAT);
 	if (sem_id == -1)
 	{
 		std::cout << "sem1 error\n";
@@ -56,24 +49,24 @@ int main(int argc, char** argv)
 		std::cout << "sem2 error\n";
 		return 1;
 	}
-	//std::cout << "semval2 " << semctl(sem_id2, 0, GETVAL) << "\n";
-	//std::cout << "semval1 " << semctl(sem_id, 0, GETVAL) << "\n";
+	//server forks
 	if (!(pid = fork()))
 	{
 		struct sockaddr_in serv;
 		int sockINT, intcon;
-		printf("Server starts\n");
+		std::cout << "Server starts\n";
 		serv.sin_family = AF_INET;
 		serv.sin_addr.s_addr = htonl(INADDR_ANY ); //all IPs of PC
 		serv.sin_port = htons(PORTNUM);
 		sockINT = socket(AF_INET, SOCK_STREAM, 0);
+		//==================connection with Client
 		int enable = 1;
+		//---if ip/port is already in use, use it
 		if (setsockopt(sockINT, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
 		{
 		    std::cout<<"setsockopt(SO_REUSEADDR) failed\n";
 		    return 1;
 		}
-		//inet_aton(argv[1], serv.sin_addr);
 		if (bind(sockINT, (sockaddr*) &serv, sizeof(serv)) < 0)
 		{
 			std::cout << "interbind error\n";
@@ -84,23 +77,21 @@ int main(int argc, char** argv)
 			std::cout << "interlisten error\n";
 			return 1;
 		}
-
-
 		intcon = accept(sockINT, NULL, NULL);
 		if (intcon < 0)
 		{
 			std::cout << "interaccept error\n";
 			return 1;
 		}
+		//---receiving part of string from client for searching
 		recv(intcon, buf, BUFSIZE, 0);
 		std::cout << "from client: " << buf << "\n";
-
 		unlink("server_socket");
 		unlink("server_socket2");
 		unlink("server_socket3");
 		sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
-		//strcpy(buf, "dol");
 		files.sun_family = AF_UNIX;
+		//==================connection with Worker1
 		strcpy(files.sun_path, "server_socket");
 		SAsize = sizeof(files);
 		if (bind(sockidW1, (sockaddr*) &files, SAsize) < 0)
@@ -117,9 +108,7 @@ int main(int argc, char** argv)
 		SB.sem_op = 1;
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
-
-		//std::cout << "Serv +1 " << semctl(sem_id2, 0, GETVAL) << "\n";
-		int chanW1 = accept(sockidW1, NULL,NULL);
+		int chanW1 = accept(sockidW1, NULL, NULL);
 		if (chanW1 < 0)
 		{
 			std::cout << "accept1 error\n";
@@ -130,7 +119,6 @@ int main(int argc, char** argv)
 			std::cout << "send1 error\n";
 			return 1;
 		}
-
 		//==================connection with Worker2
 		strcpy(files.sun_path, "server_socket2");
 		SAsize = sizeof(files);
@@ -149,7 +137,6 @@ int main(int argc, char** argv)
 		SB.sem_op = 2;
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
-		//std::cout << "Serv +2 " << semctl(sem_id2, 0, GETVAL) << "\n";
 		int chanW2 = accept(sockidW2, NULL, NULL);
 		if (chanW2 < 0)
 		{
@@ -157,7 +144,6 @@ int main(int argc, char** argv)
 			return 1;
 		}
 		send(chanW2, buf, sizeof(buf), 0);
-
 		//================connection with Worker3
 		strcpy(files.sun_path, "server_socket3");
 		SAsize = sizeof(files);
@@ -172,12 +158,10 @@ int main(int argc, char** argv)
 			std::cout << "listen3 error\n";
 			return 1;
 		}
-
 		SB.sem_num = 0;
 		SB.sem_op = 4;
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
-		//std::cout << "Serv +4 " << semctl(sem_id2, 0, GETVAL) << "\n";
 		int chanW3 = accept(sockidW3, NULL, NULL);
 		if (chanW3 < 0)
 		{
@@ -185,10 +169,9 @@ int main(int argc, char** argv)
 			return 1;
 		}
 		send(chanW3, buf, sizeof(buf), 0);
-
 		//=================Receiving results
 		char bufout[BUFSIZE * 3] = "";
-		strcpy(buf, "");    	//
+		strcpy(buf, "");    	
 		char bfrecv[BUFSIZE];
 
 		if (recv(chanW1, bfrecv, BUFSIZE, 0) < 0)
@@ -219,16 +202,16 @@ int main(int argc, char** argv)
 		SB.sem_op = -3;
 		SB.sem_flg = 0;
 		semop(sem_id, &SB, 1);
+		//---sending search results to client
 		send(intcon, bufout, BUFSIZE * 3, 0);
-		std::cout << "I am server, your info:\n" << bufout << "\n";
+		std::cout << "I am server, client info:\n" << bufout << "\n";
 		close(sockidW1);
 		close(sockidW2);
 		close(sockidW2);
 		close(intcon);
 		exit(0);
 	}
-
-	//====================Worker2
+	//====================Worker2 forks
 	if (!(pid = fork()))
 	{
 		strcpy(buf, "");
@@ -236,13 +219,11 @@ int main(int argc, char** argv)
 		clfiles.sun_family = AF_UNIX;
 		strcpy(clfiles.sun_path, "server_socket2");
 		CLsize = sizeof(clfiles);
-
 		SB.sem_num = 0;
 		SB.sem_op = -2;
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
 		printf("Worker2 starts searching\n");
-		//std::cout << "W2 -2 " << semctl(sem_id2, 0, GETVAL) << "\n";
 		sockidW2 = socket(AF_UNIX, SOCK_STREAM, 0);
 		rer = connect(sockidW2, (sockaddr*) &clfiles, CLsize);
 		if (rer < 0)
@@ -250,22 +231,19 @@ int main(int argc, char** argv)
 			std::cout << "connectW2 error\n";
 			return 1;
 		}
-
 		recv(sockidW2, buf, BUFSIZE, 0);
 		std::cout << "w2 buf=" << buf << "\n";
-
-		//char* bf2;
+		//---searching in table2 in db
 		askdb(buf, 2, askbuf);
 		std::cout << "askbuf2 " << askbuf << "\n";
 		send(sockidW2, askbuf, strlen(askbuf), 0);
-
 		SB.sem_num = 0;
 		SB.sem_op = 1;
 		SB.sem_flg = 0;
 		semop(sem_id, &SB, 1);
 		exit(0);
 	}
-	//====================Worker3
+	//====================Worker3 forks
 	if (!(pid = fork()))
 	{
 		strcpy(buf, "");
@@ -273,13 +251,11 @@ int main(int argc, char** argv)
 		clfiles.sun_family = AF_UNIX;
 		strcpy(clfiles.sun_path, "server_socket3");
 		CLsize = sizeof(clfiles);
-
 		SB.sem_num = 0;
 		SB.sem_op = -4;
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
 		printf("Worker3 starts searching\n");
-		//std::cout << "W3 -4 " << semctl(sem_id2, 0, GETVAL) << "\n";
 		sockidW3 = socket(AF_UNIX, SOCK_STREAM, 0);
 		rer = connect(sockidW3, (sockaddr*) &clfiles, CLsize);
 		if (rer < 0)
@@ -289,32 +265,27 @@ int main(int argc, char** argv)
 		}
 		recv(sockidW3, buf, BUFSIZE, 0);
 		std::cout << "w3 buf=" << buf << "\n";
+		//---searching in table3 in db
 		askdb(buf, 3, askbuf);
 		std::cout << "askbuf3 " << askbuf << "\n";
-		//std::cout << "askbuf3 len " << strlen(askbuf) << "\n";
 		send(sockidW3, askbuf, strlen(askbuf), 0);
-
 		SB.sem_num = 0;
 		SB.sem_op = 1;
 		SB.sem_flg = 0;
 		semop(sem_id, &SB, 1);
 		exit(0);
 	}
-	//====================Worker1
+	//====================Worker1 
 	strcpy(buf, "");
 	char askbuf[BUFSIZE];
 	clfiles.sun_family = AF_UNIX;
 	strcpy(clfiles.sun_path, "server_socket");
 	CLsize = sizeof(clfiles);
-
-	//strcpy(files.sa_data, "socket1.soc");
 	SB.sem_num = 0;
 	SB.sem_op = -1;
 	SB.sem_flg = 0;
 	semop(sem_id2, &SB, 1);
-
 	printf("Worker1 starts searching\n");
-	//std::cout << "W1 -1 " << semctl(sem_id2, 0, GETVAL) << "\n";
 	sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
 	rer = connect(sockidW1, (sockaddr*) &clfiles, CLsize);
 	if (rer < 0)
@@ -325,19 +296,11 @@ int main(int argc, char** argv)
 	recv(sockidW1, buf, BUFSIZE, 0);
 	std::cout << "w1 buf=" << buf << "\n";
 	askdb(buf, 1, askbuf);
-	//char bf2[300];
-	//strcpy(bf2,bf3);
 	std::cout << "askbuf1 " << askbuf << "\n";
-	//int sbf = strlen(askbuf);
-	//std::cout << "bf1size " << sbf << "\n";
-	//send(sockidW1, &sbf, sizeof(int), 0);
 	send(sockidW1, &askbuf, strlen(askbuf), 0);
-
 	SB.sem_num = 0;
 	SB.sem_op = 1;
 	SB.sem_flg = 0;
 	semop(sem_id, &SB, 1);
-	//std::cout << "Enter something to exit..\n";
-	//getchar();
 	return 0;
 }
