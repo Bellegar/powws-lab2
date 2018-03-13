@@ -5,20 +5,14 @@
  *      Author: bellegar
  */
  //***Server for searching data in certain tables in db by keyword from client
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
-#include <sys/wait.h>
 #include <sys/types.h>
-#include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 #include <netinet/in.h>
-#include <fcntl.h>
 #include <iostream>
 
 #define PORTNUM 3425
@@ -29,7 +23,6 @@ int main(int argc, char** argv)
 	//first Worker is parent
 	int pid, status, len, rer;
 	char buf[BUFSIZE];
-	std::string bufstr;
 	int sockidW1, sockidW2, sockidW3;
 	int SAsize, CLsize;
 	sockaddr_un files;
@@ -223,7 +216,7 @@ int main(int argc, char** argv)
 		SB.sem_op = -2;
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
-		printf("Worker2 starts searching\n");
+		std::cout<<"Worker2 starts searching\n";
 		sockidW2 = socket(AF_UNIX, SOCK_STREAM, 0);
 		rer = connect(sockidW2, (sockaddr*) &clfiles, CLsize);
 		if (rer < 0)
@@ -255,7 +248,7 @@ int main(int argc, char** argv)
 		SB.sem_op = -4;
 		SB.sem_flg = 0;
 		semop(sem_id2, &SB, 1);
-		printf("Worker3 starts searching\n");
+		std::cout << "Worker3 starts searching\n";
 		sockidW3 = socket(AF_UNIX, SOCK_STREAM, 0);
 		rer = connect(sockidW3, (sockaddr*) &clfiles, CLsize);
 		if (rer < 0)
@@ -285,7 +278,7 @@ int main(int argc, char** argv)
 	SB.sem_op = -1;
 	SB.sem_flg = 0;
 	semop(sem_id2, &SB, 1);
-	printf("Worker1 starts searching\n");
+	std::cout << "Worker1 starts searching\n";
 	sockidW1 = socket(AF_UNIX, SOCK_STREAM, 0);
 	rer = connect(sockidW1, (sockaddr*) &clfiles, CLsize);
 	if (rer < 0)
